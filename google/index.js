@@ -55,7 +55,6 @@ function geolocator(cellParameters) {
     if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
       const data = JSON.parse(xhr.responseText);
       if (data.hasOwnProperty('location')) {
-        console.log(data);
         placeMarker(data);
       }
     }
@@ -151,15 +150,17 @@ $(document).ready(function () {
   $(document).on("click","#WiFiSearch",function(event) {
     event.preventDefault();
 
+    var validateMAC = /^(([A-Fa-f0-9]{2}[:]){5}[A-Fa-f0-9]{2}[,]?)+$/
+
     // Create a reg expression to check that values are in valid MAC address format
 
     const macOne = $('input#macOne').val();
     const macTwo = $('input#macTwo').val();
 
-    console.log(macOne);
-    console.log(macTwo);
+    console.log(validateMAC.test(macOne));
+    console.log(validateMAC.test(macTwo));
 
-    if (macOne && macTwo) {
+    if (validateMAC.test(macOne) && validateMAC.test(macTwo)) {
       const wifiMACAddress = {
         "considerIp": "false",
         "wifiAccessPoints": [
@@ -175,8 +176,6 @@ $(document).ready(function () {
           }
         ]
       }
-
-      console.log(wifiMACAddress);
 
       // Get data from from and pass wot geolocator function
       geolocator(wifiMACAddress);
