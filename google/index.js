@@ -47,7 +47,7 @@ function geolocator(cellParameters) {
       const data = JSON.parse(xhr.responseText);
       if (data.hasOwnProperty('error')) {
         // Parse errors and display in a better format
-        console.log(data);
+        alert(data.error.message);
       }
     }
 
