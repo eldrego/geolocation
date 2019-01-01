@@ -148,11 +148,12 @@ function geolocator(cells, cellsLength) {
 
           cellTowers.push(cellDetails);
 
-          if ((cellsLength - 1) === index) {
-            console.log(cellTowers);
-            // Now you can triangulate
-            setTimeout(triangulate(cellTowers), 10000);
-          };
+          if (cellsLength > 1) {
+            if ((cellsLength - 1) === index) {
+              // Now you can triangulate
+              setTimeout(triangulate(cellTowers), 10000);
+            };
+          }
 
           placeMarker(data, cell);
           $('#cellSearch').modal('hide');
@@ -250,12 +251,6 @@ function placeTriangulatedMarker(data) {
   });
 
   gmarkers.push(marker);
-
-  // map.fitBounds(bounds);
-  //
-  // var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
-  //   google.maps.event.removeListener(boundsListener);
-  // });
 }
 
 function removeMarkers() {
