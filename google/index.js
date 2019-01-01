@@ -1,13 +1,16 @@
 var app = angular.module('geolocation', []);
+var map;
+var status = false;
+var gmarkers = [];
 
 app.controller('MainCtrl', function($scope) {
   var defaultCell = [{
     "id": 1,
     "cellTowers": [{
-      "cellId": '',
-      "locationAreaCode": '',
-      "mobileCountryCode": '',
-      "mobileNetworkCode": '',
+      "cellId": 30961,
+      "locationAreaCode": 181,
+      "mobileCountryCode": 621,
+      "mobileNetworkCode": 60,
       "signalStrength": -60
     }]
   }];
@@ -59,21 +62,23 @@ app.controller('MainCtrl', function($scope) {
   };
 
   $scope.cellTowerSearch = function() {
-    if ($scope.cells.length > 1) {
-      // Do triangulation stuff here.
-    }
 
-    $scope.cells.forEach(function (item){
-      delete item.id
-      geolocator(item);
-    });
+    geolocator($scope.cells, $scope.cells.length);
+    // $scope.cells.forEach(function (item, index){
+    //
+    //   delete item.id;
+    //   geolocator(item);
+    //
+    //   if (($scope.cells.length - 1) === index) {
+    //     console.log('triangulate now');
+    //
+    //     setTimeout(triangulate(cellTowers), 10000);
+    //
+    //   }
+    // });
   }
 
 });
-
-var map;
-var status = false;
-var gmarkers = [];
 
 function initMap() {
   let center = new google.maps.LatLng(0.0, 0.0);
@@ -105,41 +110,64 @@ function initMap() {
   map.setCenter(center);
 }
 
-function geolocator(cellParameters) {
+function geolocator(cells, cellsLength) {
+
+  var cellTowers = [];
   const APIKEY = 'AIzaSyAkRoMQzL7wzo7ysIy1LQXzI5rE6YDA4TY';
   const geolocatorUrl = "https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyAkRoMQzL7wzo7ysIy1LQXzI5rE6YDA4TY";
 
-  const searchParams = JSON.stringify(cellParameters);
+  cells.forEach(function (cell, index){
+    delete cell.id;
 
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", geolocatorUrl, true);
+    const searchParams = JSON.stringify(cell);
 
-  //Send the proper header information along with the request
-  xhr.setRequestHeader("Content-Type", "application/json");
+    const xhr = new XMLHttpRequest();
 
-  xhr.onload = function() {
-    if (this.readyState === XMLHttpRequest.DONE && this.status != 200) {
-      const data = JSON.parse(xhr.responseText);
-      if (data.hasOwnProperty('error')) {
-        // Parse errors and display in a better format
-        alert(data.error.message);
-        // $('#cellSearch').modal('hide');
+    xhr.onload = function() {
+      if (this.readyState === XMLHttpRequest.DONE && this.status != 200) {
+        const data = JSON.parse(xhr.responseText);
+        if (data.hasOwnProperty('error')) {
+          // Parse errors and display in a better format
+          alert(data.error.message);
+          // $('#cellSearch').modal('hide');
+        }
+      }
+
+      // Add location data to the map
+      if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        if (data.hasOwnProperty('location')) {
+
+          // build triagulation metadata
+          const cellDetails = {
+            latitude: data.location.lat,
+            longitude: data.location.lng,
+            signalStrength: cell.cellTowers[0].signalStrength,
+            signalStrengthRatio: 1
+          };
+
+          cellTowers.push(cellDetails);
+
+          if ((cellsLength - 1) === index) {
+            console.log(cellTowers);
+            // Now you can triangulate
+            setTimeout(triangulate(cellTowers), 10000);
+          };
+
+          placeMarker(data, cell);
+          $('#cellSearch').modal('hide');
+
+        }
       }
     }
+    xhr.open("POST", geolocatorUrl, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send(searchParams);
+  });
 
-    // Add location data to the map
-    if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
-      const data = JSON.parse(xhr.responseText);
-      if (data.hasOwnProperty('location')) {
-        placeMarker(data, cellParameters);
-        $('#cellSearch').modal('hide');
-      }
-    }
-  }
-  xhr.send(searchParams);
 }
 
-function placeMarker(data, cellParameters) {
+function placeMarker(data, cell) {
 
   const position = { lat: data.location.lat, lng: data.location.lng};
   let bounds = new google.maps.LatLngBounds();
@@ -151,15 +179,15 @@ function placeMarker(data, cellParameters) {
   const infoWindowContent = '<div class="info_content">' +
       '<div class="row">' +
       '<div class="col-md-6">' +
-      '<p><b>MNC: </b>'+cellParameters.cellTowers[0].mobileNetworkCode+'</p>' +
-      '<p><b>MCC: </b>'+ cellParameters.cellTowers[0].mobileCountryCode +'</p>' +
-      '<p><b>LAC: </b>'+ cellParameters.cellTowers[0].locationAreaCode +'</p>' +
-      '<p><b>CELL ID: </b>'+ cellParameters.cellTowers[0].cellId +'</p>' +
+      '<p><b>MNC: </b>'+cell.cellTowers[0].mobileNetworkCode +'</p>' +
+      '<p><b>MCC: </b>'+ cell.cellTowers[0].mobileCountryCode +'</p>' +
+      '<p><b>LAC: </b>'+ cell.cellTowers[0].locationAreaCode +'</p>' +
+      '<p><b>CELL ID: </b>'+ cell.cellTowers[0].cellId +'</p>' +
       '</div>' +
       '<div class="col-md-6">' +
       '<p><b>Lat: </b>'+ data.location.lat +'</p>' +
       '<p><b>Lng: </b>'+ data.location.lng +'</p>' +
-      '<p><b>Accuracy: </b>'+ data.accuracy +'</p>' +
+      '<p><b>Accuracy: </b>'+ data.accuracy || null +'</p>' +
       '</div>' +
       '</div></div>';
 
@@ -167,7 +195,6 @@ function placeMarker(data, cellParameters) {
   var infowindow = new google.maps.InfoWindow({
     content: infoWindowContent
   });
-
 
   const marker = new google.maps.Marker({
     position: position,
@@ -218,6 +245,44 @@ function numberParser(number) {
   }
 }
 
+function triangulate(towers) {
+  console.log(towers, 'these are the towers');
+
+  var totalSignalStrength = 0;
+  for (var i = 0; i < towers.length; i++)
+  totalSignalStrength += towers[i].signalStrength;
+
+  for (var i = 0; i < towers.length; i++)
+  towers[i].signalStrengthRatio = towers[i].signalStrength / totalSignalStrength;
+
+  var clientLongitude = 0;
+  for (var i = 0; i < towers.length; i++)
+  clientLongitude += towers[i].longitude * towers[i].signalStrengthRatio;
+
+  var clientLatitude = 0;
+  for (var i = 0; i < towers.length; i++)
+  clientLatitude += towers[i].latitude * towers[i].signalStrengthRatio;
+
+  console.log("longitude: " + clientLongitude);
+  console.log("latitude: " + clientLatitude);
+
+  const data = {
+    location: { lat: clientLatitude, lng: clientLongitude },
+  };
+
+  cellTowers = {
+    "cellTowers": [{
+      "cellId": null,
+      "locationAreaCode": null,
+      "mobileCountryCode": null,
+      "mobileNetworkCode": null,
+      "signalStrength": null
+    }]
+  }
+
+  placeMarker(data, cellTowers);
+}
+
 $(document).ready(function () {
   $(document).on('click', '#placeit', function(event) {
     const data = {
@@ -226,75 +291,6 @@ $(document).ready(function () {
     }
     placeMarker(data);
   })
-
-  $(document).on("click","#cellTowerSearch",function(event) {
-    event.preventDefault();
-
-    const cellId = numberParser($('input#cellId').val());
-    const lac = numberParser($('input#lac').val());
-    const mcc = numberParser($('input#mcc').val());
-    const mnc = numberParser($('input#mnc').val());
-
-    if (cellId && lac && mcc && mnc) {
-      const cellParameters = {
-       "homeMobileCountryCode": mcc,
-       "homeMobileNetworkCode": mnc,
-       "cellTowers": [
-        {
-         "cellId": cellId,
-         "locationAreaCode": lac,
-         "mobileCountryCode": mcc,
-         "mobileNetworkCode": mnc
-        }
-       ],
-       "wifiAccessPoints": []
-      }
-
-      // Get data from from and pass wot geolocator function
-      geolocator(cellParameters);
-    } else {
-      alert ('All fields are required')
-    }
-
-  });
-
-  $(document).on("click","#WiFiSearch",function(event) {
-    event.preventDefault();
-
-    var validateMAC = /^(([A-Fa-f0-9]{2}[:]){5}[A-Fa-f0-9]{2}[,]?)+$/
-
-    // Create a reg expression to check that values are in valid MAC address format
-
-    const macOne = $('input#macOne').val();
-    const macTwo = $('input#macTwo').val();
-
-    console.log(validateMAC.test(macOne));
-    console.log(validateMAC.test(macTwo));
-
-    if (validateMAC.test(macOne) && validateMAC.test(macTwo)) {
-      const wifiMACAddress = {
-        "considerIp": "false",
-        "wifiAccessPoints": [
-          {
-              "macAddress": macOne,
-              "signalStrength": -43,
-              "signalToNoiseRatio": 0
-          },
-          {
-              "macAddress": macTwo,
-              "signalStrength": -55,
-              "signalToNoiseRatio": 0
-          }
-        ]
-      }
-
-      // Get data from from and pass wot geolocator function
-      geolocator(wifiMACAddress);
-    } else {
-      alert ('All fields are required')
-    }
-
-  });
 
   // var center = new google.maps.LatLng(0.0, 0.0);
   //
