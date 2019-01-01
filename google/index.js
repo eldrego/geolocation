@@ -1,5 +1,78 @@
+var app = angular.module('geolocation', []);
+
+app.controller('MainCtrl', function($scope) {
+  var defaultCell = [{
+    "id": 1,
+    "cellTowers": [{
+      "cellId": '',
+      "locationAreaCode": '',
+      "mobileCountryCode": '',
+      "mobileNetworkCode": '',
+      "signalStrength": -60
+    }]
+  }];
+
+  $scope.cells = defaultCell;
+
+  $scope.index = $scope.cells.length;
+
+  $scope.addNewCell = function() {
+
+    if($scope.cells.length>=5){
+      alert("Cell towers cannot be more than 5");
+      return;
+    }
+
+    var newItemNo = ++$scope.index;
+    $scope.cells.push({
+      "id": newItemNo,
+      "cellTowers": [{
+        "cellId": '',
+        "locationAreaCode": '',
+        "mobileCountryCode": '',
+        "mobileNetworkCode": '',
+        "signalStrength": -60
+      }]
+    });
+  };
+
+  $scope.removeCell = function(id) {
+    if($scope.cells.length<=1){
+      alert("Cell towers cannot be less than 1");
+      return;
+    }
+
+    var index = -1;
+    var comArr = eval( $scope.cells );
+    for( var i = 0; i < comArr.length; i++ ) {
+      if( comArr[i].id === id) {
+        index = i;
+        break;
+      }
+    }
+
+    if( index === -1 ) {
+    	alert( "Something gone wrong" );
+    }
+
+    $scope.cells.splice( index, 1 );
+  };
+
+  $scope.cellTowerSearch = function() {
+    if ($scope.cells.length > 1) {
+      // Do triangulation stuff here.
+    }
+
+    $scope.cells.forEach(function (item){
+      delete item.id
+      geolocator(item);
+    });
+  }
+
+});
 
 var map;
+var status = false;
 var gmarkers = [];
 
 function initMap() {
@@ -26,6 +99,8 @@ function initMap() {
 
   map = new google.maps.Map(document.getElementById('map'), myOptions);
   map.setZoom(2);
+  // map.setTilt(50); What does this do?
+
   center = new google.maps.LatLng(0.0, 0.0);
   map.setCenter(center);
 }
@@ -48,6 +123,7 @@ function geolocator(cellParameters) {
       if (data.hasOwnProperty('error')) {
         // Parse errors and display in a better format
         alert(data.error.message);
+        // $('#cellSearch').modal('hide');
       }
     }
 
@@ -55,28 +131,53 @@ function geolocator(cellParameters) {
     if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
       const data = JSON.parse(xhr.responseText);
       if (data.hasOwnProperty('location')) {
-        placeMarker(data);
+        placeMarker(data, cellParameters);
+        $('#cellSearch').modal('hide');
       }
     }
   }
   xhr.send(searchParams);
 }
 
-function placeMarker(data) {
-  // Remove old markers before placing the new marker
-  removeMarkers();
+function placeMarker(data, cellParameters) {
 
   const position = { lat: data.location.lat, lng: data.location.lng};
+  let bounds = new google.maps.LatLngBounds();
 
+  bounds.extend(position);
   const center = new google.maps.LatLng(data.location.lat, data.location.lng);
-  map.setCenter(center);
-  map.setZoom(18);
 
-  const marker = new google.maps.Marker({position: position, map: map});
+  // Info Window Content
+  const infoWindowContent = '<div class="info_content">' +
+      '<div class="row">' +
+      '<div class="col-md-6">' +
+      '<p><b>MNC: </b>'+cellParameters.cellTowers[0].mobileNetworkCode+'</p>' +
+      '<p><b>MCC: </b>'+ cellParameters.cellTowers[0].mobileCountryCode +'</p>' +
+      '<p><b>LAC: </b>'+ cellParameters.cellTowers[0].locationAreaCode +'</p>' +
+      '<p><b>CELL ID: </b>'+ cellParameters.cellTowers[0].cellId +'</p>' +
+      '</div>' +
+      '<div class="col-md-6">' +
+      '<p><b>Lat: </b>'+ data.location.lat +'</p>' +
+      '<p><b>Lng: </b>'+ data.location.lng +'</p>' +
+      '<p><b>Accuracy: </b>'+ data.accuracy +'</p>' +
+      '</div>' +
+      '</div></div>';
+
+  // Display multiple markers on a map
+  var infowindow = new google.maps.InfoWindow({
+    content: infoWindowContent
+  });
+
+
+  const marker = new google.maps.Marker({
+    position: position,
+    map: map,
+    title: 'title'
+  });
 
   var circle = new google.maps.Circle({
     map: map,
-    radius: data.location.accuracy,    // 10 miles in metres
+    radius: 100,    // 10 miles in metres
     fillColor: '#313131',
     fillOpacity: .3,
     strokeColor: '#fff',
@@ -86,9 +187,20 @@ function placeMarker(data) {
 
   circle.bindTo('center', marker, 'position');
 
+  // Allow each marker to have an info window
+  marker.addListener('click', function() {
+    infowindow.open(map, marker);
+  });
+
   gmarkers.push(marker);
   gmarkers.push(circle);
 
+  map.fitBounds(bounds);
+
+  var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+    this.setZoom(14);
+    google.maps.event.removeListener(boundsListener);
+  });
 }
 
 function removeMarkers() {
@@ -105,7 +217,6 @@ function numberParser(number) {
     return parsedNumber
   }
 }
-
 
 $(document).ready(function () {
   $(document).on('click', '#placeit', function(event) {

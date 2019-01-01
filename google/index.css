@@ -141,3 +141,15 @@ html, body {
   border-bottom-right-radius: .25rem;
   border-bottom-left-radius: .25rem;
 }
+
+.modal-dialog {
+  max-width: 800px !important;
+}
+
+.modal-button {
+  margin: 0 20px;
+}
+
+.info_content {
+  width: 300px;
+}
