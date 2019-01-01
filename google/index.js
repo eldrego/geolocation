@@ -199,12 +199,15 @@ function placeMarker(data, cell) {
   const marker = new google.maps.Marker({
     position: position,
     map: map,
-    title: 'title'
+    title: 'Cell Tower',
+    icon: {
+      url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+    }
   });
 
   var circle = new google.maps.Circle({
     map: map,
-    radius: 100,    // 10 miles in metres
+    // radius: 100,    // 10 miles in metres
     fillColor: '#313131',
     fillOpacity: .3,
     strokeColor: '#fff',
@@ -228,6 +231,31 @@ function placeMarker(data, cell) {
     this.setZoom(14);
     google.maps.event.removeListener(boundsListener);
   });
+}
+
+function placeTriangulatedMarker(data) {
+
+  const position = { lat: data.location.lat, lng: data.location.lng};
+  let bounds = new google.maps.LatLngBounds();
+
+  bounds.extend(position);
+  const center = new google.maps.LatLng(data.location.lat, data.location.lng);
+
+  const marker = new google.maps.Marker({
+    position: position,
+    map: map,
+    icon: {
+      url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+    }
+  });
+
+  gmarkers.push(marker);
+
+  // map.fitBounds(bounds);
+  //
+  // var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+  //   google.maps.event.removeListener(boundsListener);
+  // });
 }
 
 function removeMarkers() {
@@ -270,17 +298,7 @@ function triangulate(towers) {
     location: { lat: clientLatitude, lng: clientLongitude },
   };
 
-  cellTowers = {
-    "cellTowers": [{
-      "cellId": null,
-      "locationAreaCode": null,
-      "mobileCountryCode": null,
-      "mobileNetworkCode": null,
-      "signalStrength": null
-    }]
-  }
-
-  placeMarker(data, cellTowers);
+  placeTriangulatedMarker(data);
 }
 
 $(document).ready(function () {
