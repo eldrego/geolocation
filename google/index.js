@@ -16,9 +16,7 @@ app.controller('MainCtrl', function($scope) {
   }];
 
   $scope.cells = defaultCell;
-
   $scope.index = $scope.cells.length;
-
   $scope.addNewCell = function() {
 
     if($scope.cells.length>=5){
@@ -62,20 +60,21 @@ app.controller('MainCtrl', function($scope) {
   };
 
   $scope.cellTowerSearch = function() {
-
     geolocator($scope.cells, $scope.cells.length);
-    // $scope.cells.forEach(function (item, index){
-    //
-    //   delete item.id;
-    //   geolocator(item);
-    //
-    //   if (($scope.cells.length - 1) === index) {
-    //     console.log('triangulate now');
-    //
-    //     setTimeout(triangulate(cellTowers), 10000);
-    //
-    //   }
-    // });
+  }
+
+  $scope.coord = {
+    "latitude": '',
+    "longitude": '',
+    "radius": ''
+  };
+
+  $scope.placeCoordinates = function() {
+    if ($scope.coord.latitude && $scope.coord.longitude && $scope.coord.radius) {
+      placeCoordinates($scope.coord);
+    } else {
+      alert ('All fields are required');
+    }
   }
 
 });
@@ -117,7 +116,7 @@ function geolocator(cells, cellsLength) {
   const geolocatorUrl = "https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyAkRoMQzL7wzo7ysIy1LQXzI5rE6YDA4TY";
 
   cells.forEach(function (cell, index){
-    delete cell.id;
+    // delete cell.id;
 
     const searchParams = JSON.stringify(cell);
 
@@ -253,6 +252,46 @@ function placeTriangulatedMarker(data) {
   gmarkers.push(marker);
 }
 
+function placeCoordinates(data) {
+
+  const position = { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude)};
+  let bounds = new google.maps.LatLngBounds();
+
+  bounds.extend(position);
+  const center = new google.maps.LatLng(parseInt(data.latitude), parseInt(data.longitude));
+
+  const marker = new google.maps.Marker({
+    position: position,
+    map: map,
+    icon: {
+      url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+    },
+    title: 'Placed marker'
+  });
+
+  var circle = new google.maps.Circle({
+    map: map,
+    radius: parseInt(data.radius),
+    fillColor: '#313131',
+    fillOpacity: .3,
+    strokeColor: '#fff',
+    strokeOpacity: .5,
+    strokeWeight: .9
+  });
+
+  circle.bindTo('center', marker, 'position');
+
+  gmarkers.push(marker);
+  gmarkers.push(circle);
+
+  map.fitBounds(bounds);
+
+  var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+    this.setZoom(14);
+    google.maps.event.removeListener(boundsListener);
+  });
+}
+
 function removeMarkers() {
   for (i = 0; i < gmarkers.length; i++) {
     gmarkers[i].setMap(null);
@@ -286,9 +325,6 @@ function triangulate(towers) {
   for (var i = 0; i < towers.length; i++)
   clientLatitude += towers[i].latitude * towers[i].signalStrengthRatio;
 
-  console.log("longitude: " + clientLongitude);
-  console.log("latitude: " + clientLatitude);
-
   const data = {
     location: { lat: clientLatitude, lng: clientLongitude },
   };
@@ -304,11 +340,4 @@ $(document).ready(function () {
     }
     placeMarker(data);
   })
-
-  // var center = new google.maps.LatLng(0.0, 0.0);
-  //
-  // google.maps.event.addDomListener(window, 'load', initialize);
-  // google.maps.event.addDomListener(window, 'resize', function () {
-  //   map.setCenter(center);
-  // });
 });

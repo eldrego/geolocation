@@ -27,6 +27,10 @@
               <a class="btn btn-success btn-sm modal-button text-right" data-toggle="modal" data-target="#cellSearch" href="#cellSearch" role="button" aria-expanded="false" aria-controls="cellSearch">
                 Cell Tower Search
               </a>
+
+              <a class="btn btn-success btn-sm modal-button text-right" data-toggle="modal" data-target="#enterCoordinates" href="#enterCoordinates" role="button" aria-expanded="false" aria-controls="enterCoordinates">
+                Enter Coordinates
+              </a>
             </div>
 
           </div>
@@ -37,7 +41,7 @@
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                  <h5 class="modal-title" id="exampleModalLabel">Cell Tower Search</h5>
                   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                   </button>
@@ -46,7 +50,6 @@
                 <div class="modal-body">
                   <div class="card card-body">
                     <form>
-                      <form>
                         <div class="form-row">
                           <div class="form-group col">
                             <label for="inputPassword4">MNC</label>
@@ -91,8 +94,58 @@
                           </div>
                         </div>
 
-                      <button type="submit" ng-click="cellTowerSearch()" class="btn btn-success mb-2 btn-sm">Search</button>
+                      <button class="btn btn-success mb-2 btn-sm" ng-click="cellTowerSearch()" >Search</button>
+                      <button class="btn btn-primary mb-2 btn-sm float-right" ng-click="addNewCell()">Add Cell</button>
+                    </form>
 
+                    <!-- <div id="choicesDisplay">
+                    {{ cells }}
+                    </div> -->
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal fade" id="enterCoordinates" tabindex="-1" role="dialog" aria-labelledby="enterCoordinates" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLabel">Enter Coordinates</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+
+                <div class="modal-body">
+                  <div class="card card-body">
+                    <form>
+                        <div class="form-row">
+                          <div class="form-group col">
+                            <label for="inputPassword4">Latitude</label>
+                          </div>
+                          <div class="form-group col">
+                            <label for="inputEmail4">Longitude</label>
+                          </div>
+                          <div class="form-group col">
+                            <label for="inputPassword4">Radius</label>
+                          </div>
+                        </div>
+
+                        <div class="form-row">
+                          <div class="form-group col">
+                            <input type="text" class="form-control" ng-model="coord.latitude" placeholder="Latitude" required>
+                          </div>
+                          <div class="form-group col">
+                            <input type="text" class="form-control" ng-model="coord.longitude" placeholder="Longitude" required>
+                          </div>
+                          <div class="form-group col">
+                            <input type="text" class="form-control" ng-model="coord.radius" placeholder="Radius" required>
+                          </div>
+                        </div>
+
+                      <button class="btn btn-success mb-2 btn-sm" ng-click="placeCoordinates()">Place Marker</button>
                     </form>
                   </div>
                 </div>
