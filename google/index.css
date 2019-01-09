@@ -142,7 +142,7 @@ html, body {
   border-bottom-left-radius: .25rem;
 }
 
-.modal-dialog {
+#cellSearch .modal-dialog {
   max-width: 800px !important;
 }
 

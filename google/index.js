@@ -15,10 +15,15 @@ app.controller('MainCtrl', function($scope) {
     }]
   }];
 
+  const wapDetails = {
+    "macAddressOne": '',
+    "macAddressTwo": ''
+  }
+
   $scope.cells = defaultCell;
   $scope.index = $scope.cells.length;
-  $scope.addNewCell = function() {
 
+  $scope.addNewCell = function() {
     if($scope.cells.length>=5){
       alert("Cell towers cannot be more than 5");
       return;
@@ -64,17 +69,38 @@ app.controller('MainCtrl', function($scope) {
   }
 
   $scope.coord = {
-    "latitude": '',
-    "longitude": '',
+    "details": '',
     "radius": ''
   };
 
   $scope.placeCoordinates = function() {
-    if ($scope.coord.latitude && $scope.coord.longitude && $scope.coord.radius) {
-      placeCoordinates($scope.coord);
+    var coords = $scope.coord.details.split(",");
+
+    console.log($scope.coord.details);
+
+    if ($scope.coord.details && $scope.coord.radius) {
+      console.log('here');
+      placeCoordinates(coords[0], coords[1], $scope.coord.radius);
     } else {
       alert ('All fields are required');
     }
+  }
+
+  $scope.wapSearch = function() {
+    var macCheck = /^(([A-Fa-f0-9]{2}[:]){5}[A-Fa-f0-9]{2}[,]?)+$/
+
+    if (macCheck.test($scope.wapDetails.macAddressOne) && macCheck.test($scope.wapDetails.macAddressTwo)) {
+      const wapDetails = {
+        "considerIp": "false",
+        "wifiAccessPoints": [
+          { "macAddress": $scope.wapDetails.macAddressOne },
+          { "macAddress": $scope.wapDetails.macAddressTwo }]
+      }
+      geolocator(null, null, wapDetails);
+    }
+
+    // 00:0E:2E:D2:BB:05
+    // 00:08:9F:0E:0B:EF
   }
 
 });
@@ -109,16 +135,67 @@ function initMap() {
   map.setCenter(center);
 }
 
-function geolocator(cells, cellsLength) {
+function geolocator(cells, cellsLength, waps) {
 
   var cellTowers = [];
-  const APIKEY = 'AIzaSyAkRoMQzL7wzo7ysIy1LQXzI5rE6YDA4TY';
-  const geolocatorUrl = "https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyAkRoMQzL7wzo7ysIy1LQXzI5rE6YDA4TY";
+  const geolocatorUrl = "https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyD72XGkolbzqHdVS3JE3WgPtfU7h8zVb4E";
 
-  cells.forEach(function (cell, index){
-    // delete cell.id;
+  if (cells) {
+    cells.forEach(function (cell, index){
+      // delete cell.id;
 
-    const searchParams = JSON.stringify(cell);
+      const searchParams = JSON.stringify(cell);
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.onload = function() {
+        if (this.readyState === XMLHttpRequest.DONE && this.status != 200) {
+          const data = JSON.parse(xhr.responseText);
+          if (data.hasOwnProperty('error')) {
+            // Parse errors and display in a better format
+            alert(data.error.message);
+            // $('#cellSearch').modal('hide');
+          }
+        }
+
+        // Add location data to the map
+        if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          if (data.hasOwnProperty('location')) {
+
+            // build triagulation metadata
+            const cellDetails = {
+              latitude: data.location.lat,
+              longitude: data.location.lng,
+              signalStrength: cell.cellTowers[0].signalStrength,
+              signalStrengthRatio: 1
+            };
+
+            cellTowers.push(cellDetails);
+
+            if (cellsLength > 1) {
+              if ((cellsLength - 1) === index) {
+                // Now you can triangulate
+                setTimeout(triangulate(cellTowers), 10000);
+              };
+            }
+
+            placeMarker(data, cell);
+            $('#cellSearch').modal('hide');
+
+          }
+        }
+      }
+      xhr.open("POST", geolocatorUrl, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.send(searchParams);
+    });
+  }
+
+  if (waps) {
+    console.log('for WAP search');
+
+    const searchParams = JSON.stringify(waps);
 
     const xhr = new XMLHttpRequest();
 
@@ -137,25 +214,8 @@ function geolocator(cells, cellsLength) {
         const data = JSON.parse(xhr.responseText);
         if (data.hasOwnProperty('location')) {
 
-          // build triagulation metadata
-          const cellDetails = {
-            latitude: data.location.lat,
-            longitude: data.location.lng,
-            signalStrength: cell.cellTowers[0].signalStrength,
-            signalStrengthRatio: 1
-          };
-
-          cellTowers.push(cellDetails);
-
-          if (cellsLength > 1) {
-            if ((cellsLength - 1) === index) {
-              // Now you can triangulate
-              setTimeout(triangulate(cellTowers), 10000);
-            };
-          }
-
-          placeMarker(data, cell);
-          $('#cellSearch').modal('hide');
+          placeTriangulatedMarker(data, waps);
+          $('#macSearch').modal('hide');
 
         }
       }
@@ -163,8 +223,7 @@ function geolocator(cells, cellsLength) {
     xhr.open("POST", geolocatorUrl, true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(searchParams);
-  });
-
+  }
 }
 
 function placeMarker(data, cell) {
@@ -179,7 +238,7 @@ function placeMarker(data, cell) {
   const infoWindowContent = '<div class="info_content">' +
       '<div class="row">' +
       '<div class="col-md-6">' +
-      '<p><b>MNC: </b>'+cell.cellTowers[0].mobileNetworkCode +'</p>' +
+      '<p><b>MNC: </b>'+ cell.cellTowers[0].mobileNetworkCode +'</p>' +
       '<p><b>MCC: </b>'+ cell.cellTowers[0].mobileCountryCode +'</p>' +
       '<p><b>LAC: </b>'+ cell.cellTowers[0].locationAreaCode +'</p>' +
       '<p><b>CELL ID: </b>'+ cell.cellTowers[0].cellId +'</p>' +
@@ -252,13 +311,12 @@ function placeTriangulatedMarker(data) {
   gmarkers.push(marker);
 }
 
-function placeCoordinates(data) {
-
-  const position = { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude)};
+function placeCoordinates(lat, long, radius) {
+  const position = { lat: parseFloat(lat), lng: parseFloat(long)};
   let bounds = new google.maps.LatLngBounds();
 
   bounds.extend(position);
-  const center = new google.maps.LatLng(parseInt(data.latitude), parseInt(data.longitude));
+  const center = new google.maps.LatLng(parseInt(lat), parseInt(long));
 
   const marker = new google.maps.Marker({
     position: position,
@@ -271,7 +329,7 @@ function placeCoordinates(data) {
 
   var circle = new google.maps.Circle({
     map: map,
-    radius: parseInt(data.radius),
+    radius: parseInt(radius),
     fillColor: '#313131',
     fillOpacity: .3,
     strokeColor: '#fff',
@@ -308,7 +366,6 @@ function numberParser(number) {
 }
 
 function triangulate(towers) {
-  console.log(towers, 'these are the towers');
 
   var totalSignalStrength = 0;
   for (var i = 0; i < towers.length; i++)
