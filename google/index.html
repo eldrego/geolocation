@@ -170,30 +170,38 @@
 
                 <div class="modal-body">
                   <div class="card card-body">
+
                     <form>
                         <div class="form-row">
                           <div class="form-group col">
-                            <label for="mac1">MAC Address 1</label>
+                            <label for="inputPassword4">MAC</label>
                           </div>
-
                           <div class="form-group col">
-                            <label for="mac2">MAC Address 2</label>
+                            <label for="inputEmail4">RSSI</label>
+                          </div>
+                          <div class="form-group col">
+                            <label for="inputPassword4"></label>
                           </div>
                         </div>
 
-                        <div class="form-row">
+                        <div class="form-row" data-ng-repeat="wap in waps track by wap.id">
                           <div class="form-group col">
-                            <input type="text" class="form-control" ng-model="wapDetails.macAddressOne" placeholder="MAC Address 2" required>
+                            <input type="text" class="form-control" ng-model="wap.macAddress">
                           </div>
                           <div class="form-group col">
-                            <input type="text" class="form-control" ng-model="wapDetails.macAddressTwo" placeholder="MAC Address 2" required>
+                            <input type="text" class="form-control" ng-model="wap.signalStrength">
+                          </div>
+
+                          <div class="form-group col">
+                            <button class="btn btn-danger" ng-click="removeWap(wap.id)">-</button>
                           </div>
                         </div>
 
-                      <button class="btn btn-success mb-2 btn-sm" ng-click="wapSearch()">Place Marker</button>
+                      <button class="btn btn-success mb-2 btn-sm" ng-click="wapSearch()">Locate WAPS</button>
+                      <button class="btn btn-primary mb-2 btn-sm float-right" ng-click="addNewWap()">Add Cell</button>
                     </form>
 
-                    {{ wapDetails }}
+                    {{ waps }}
                   </div>
                 </div>
                 <!-- <div class="modal-footer">
@@ -214,10 +222,10 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular.min.js" type="text/javascript"></script>
 
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD72XGkolbzqHdVS3JE3WgPtfU7h8zVb4E&callback=initMap" type="text/javascript"></script>
-    <!-- <script async defer
+    <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD72XGkolbzqHdVS3JE3WgPtfU7h8zVb4E&callback=initMap" type="text/javascript"></script> -->
+    <script async defer
     src="https://maps.googleapis.com/maps/api/js?callback=initMap">
-    </script> -->
+    </script>
 
     <script src="./index.js" type="text/javascript"></script>
   </body>

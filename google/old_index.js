@@ -7,59 +7,18 @@ app.controller('MainCtrl', function($scope) {
   var defaultCell = [{
     "id": 1,
     "cellTowers": [{
-      "cellId": 549659,
-      "locationAreaCode": 302,
-      "mobileCountryCode": 621,
-      "mobileNetworkCode": 20,
-      "signalStrength": -60
-    }]
-  },
-  {
-    "id": 2,
-    "cellTowers": [{
-      "cellId": 769025,
-      "locationAreaCode": 44001,
+      "cellId": 30961,
+      "locationAreaCode": 181,
       "mobileCountryCode": 621,
       "mobileNetworkCode": 60,
       "signalStrength": -60
     }]
-  },{
-    "id": 3,
-    "cellTowers": [{
-      "cellId": 529219,
-      "locationAreaCode": 302,
-      "mobileCountryCode": 621,
-      "mobileNetworkCode": 20,
-      "signalStrength": -60
-    }]
-  },{
-    "id": 4,
-    "cellTowers": [{
-      "cellId": 459439,
-      "locationAreaCode": 303,
-      "mobileCountryCode": 621,
-      "mobileNetworkCode": 20,
-      "signalStrength": -60
-    }]
   }];
 
-  const wapDefaults = [
-    {
-      "id": 1,
-      "macAddress": '',
-      "signalStrength": -70
-    },
-    {
-      "id": 2,
-      "macAddress": '',
-      "signalStrength": -70
-    }
-  ]
-
-  $scope.coord = {
-    "details": '',
-    "radius": ''
-  };
+  const wapDetails = {
+    "macAddressOne": '',
+    "macAddressTwo": ''
+  }
 
   $scope.cells = defaultCell;
   $scope.index = $scope.cells.length;
@@ -105,76 +64,43 @@ app.controller('MainCtrl', function($scope) {
     $scope.cells.splice( index, 1 );
   };
 
-  // Search for Cell Towers
   $scope.cellTowerSearch = function() {
-    geolocator('cells', $scope.cells, $scope.cells.length);
+    geolocator($scope.cells, $scope.cells.length);
   }
 
-
-  $scope.waps = wapDefaults;
-  $scope.wapIndex = $scope.waps.length;
-
-  $scope.addNewWap = function() {
-    if($scope.waps.length>=5){
-      alert("MAC address cannot be more than 5");
-      return;
-    }
-
-    var newItemNo = ++$scope.wapIndex;
-    $scope.waps.push({
-      "id": newItemNo,
-      "macAddress": '',
-      "signalStrength": -70
-    });
+  $scope.coord = {
+    "details": '',
+    "radius": ''
   };
 
-  $scope.removeWap = function(id) {
-    if($scope.waps.length<=2){
-      alert("MAC address cannot be less than 2");
-      return;
+  $scope.placeCoordinates = function() {
+    var coords = $scope.coord.details.split(",");
+
+    console.log($scope.coord.details);
+
+    if ($scope.coord.details && $scope.coord.radius) {
+      console.log('here');
+      placeCoordinates(coords[0], coords[1], $scope.coord.radius);
+    } else {
+      alert ('All fields are required');
     }
+  }
 
-    var index = -1;
-    var comArr = eval( $scope.waps );
-    for( var i = 0; i < comArr.length; i++ ) {
-      if( comArr[i].id === id) {
-        index = i;
-        break;
-      }
-    }
-
-    if( index === -1 ) {
-      alert( "Something gone wrong" );
-    }
-
-    $scope.waps.splice( index, 1 );
-  };
-
-  // Search for WAP using MAC addresses
   $scope.wapSearch = function() {
+    var macCheck = /^(([A-Fa-f0-9]{2}[:]){5}[A-Fa-f0-9]{2}[,]?)+$/
 
-    const wapDetails = {
-      "considerIp": "false",
-      "wifiAccessPoints": $scope.waps
+    if (macCheck.test($scope.wapDetails.macAddressOne) && macCheck.test($scope.wapDetails.macAddressTwo)) {
+      const wapDetails = {
+        "considerIp": "false",
+        "wifiAccessPoints": [
+          { "macAddress": $scope.wapDetails.macAddressOne },
+          { "macAddress": $scope.wapDetails.macAddressTwo }]
+      }
+      geolocator(null, null, wapDetails);
     }
-    geolocator('waps', null, null, wapDetails);
 
     // 00:0E:2E:D2:BB:05
     // 00:08:9F:0E:0B:EF
-  }
-
-  //
-  $scope.placeCoordinates = function() {
-    // var coords = $scope.coord.details.split(",");
-    //
-    // console.log($scope.coord.details);
-    //
-    // if ($scope.coord.details && $scope.coord.radius) {
-    //   console.log('here');
-    //   placeCoordinates(coords[0], coords[1], $scope.coord.radius);
-    // } else {
-    //   alert ('All fields are required');
-    // }
   }
 
 });
@@ -209,15 +135,20 @@ function initMap() {
   map.setCenter(center);
 }
 
-function geolocator(searchType, cells, cellsLength, waps) {
+function geolocator(cells, cellsLength, waps) {
 
-  let cellTowers = [];
+  console.log(cells);
+
+  var cellTowers = [];
   const geolocatorUrl = "https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyD72XGkolbzqHdVS3JE3WgPtfU7h8zVb4E";
 
   if (cells) {
     cells.forEach(function (cell, index){
+      // delete cell.id;
+      console.log(index, 'index');
 
       const searchParams = JSON.stringify(cell);
+
       const xhr = new XMLHttpRequest();
 
       xhr.onload = function() {
@@ -234,6 +165,7 @@ function geolocator(searchType, cells, cellsLength, waps) {
         if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
           const data = JSON.parse(xhr.responseText);
           if (data.hasOwnProperty('location')) {
+
             // build triagulation metadata
             const cellDetails = {
               latitude: data.location.lat,
@@ -244,15 +176,14 @@ function geolocator(searchType, cells, cellsLength, waps) {
 
             cellTowers.push(cellDetails);
 
-            placeMarker(data, cell, null, 'green');
-
             if (cellsLength > 1) {
-              if (cellTowers.length === cellsLength) {
+              if ((cellsLength - 1) === index) {
                 // Now you can triangulate
                 setTimeout(triangulate(cellTowers), 10000);
               };
             }
 
+            placeMarker(data, cell);
             $('#cellSearch').modal('hide');
 
           }
@@ -262,9 +193,13 @@ function geolocator(searchType, cells, cellsLength, waps) {
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.send(searchParams);
     });
-  } else if (waps) {
-    console.log(waps)
+  }
+
+  if (waps) {
+    console.log('for WAP search');
+
     const searchParams = JSON.stringify(waps);
+
     const xhr = new XMLHttpRequest();
 
     xhr.onload = function() {
@@ -272,7 +207,6 @@ function geolocator(searchType, cells, cellsLength, waps) {
         const data = JSON.parse(xhr.responseText);
         if (data.hasOwnProperty('error')) {
           // Parse errors and display in a better format
-          console.log(data)
           alert(data.error.message);
           // $('#cellSearch').modal('hide');
         }
@@ -283,6 +217,9 @@ function geolocator(searchType, cells, cellsLength, waps) {
         const data = JSON.parse(xhr.responseText);
         if (data.hasOwnProperty('location')) {
 
+          placeTriangulatedMarker(data, waps);
+          $('#macSearch').modal('hide');
+
         }
       }
     }
@@ -292,7 +229,7 @@ function geolocator(searchType, cells, cellsLength, waps) {
   }
 }
 
-function placeMarker(data, cell, waps, color) {
+function placeMarker(data, cell) {
 
   const position = { lat: data.location.lat, lng: data.location.lng};
   let bounds = new google.maps.LatLngBounds();
@@ -300,41 +237,21 @@ function placeMarker(data, cell, waps, color) {
   bounds.extend(position);
   const center = new google.maps.LatLng(data.location.lat, data.location.lng);
 
-  let infoWindowContent = '';
-
-  if (cell) {
-    // Info Window Content
-    infoWindowContent = '<div class="info_content">' +
-        '<div class="row">' +
-        '<div class="col-md-6">' +
-        '<p><b>MNC: </b>'+ cell.cellTowers[0].mobileNetworkCode +'</p>' +
-        '<p><b>MCC: </b>'+ cell.cellTowers[0].mobileCountryCode +'</p>' +
-        '<p><b>LAC: </b>'+ cell.cellTowers[0].locationAreaCode +'</p>' +
-        '<p><b>CELL ID: </b>'+ cell.cellTowers[0].cellId +'</p>' +
-        '</div>' +
-        '<div class="col-md-6">' +
-        '<p><b>Lat: </b>'+ data.location.lat +'</p>' +
-        '<p><b>Lng: </b>'+ data.location.lng +'</p>' +
-        '<p><b>Accuracy: </b>'+ data.accuracy || null +'</p>' +
-        '</div>' +
-        '</div></div>';
-  } else if (waps){
-    infoWindowContent = '<div class="info_content">' +
-        '<div class="row">' +
-        '<div class="col-md-6">' +
-        '<p><b>MNC: </b> Content for the Gods </p>' +
-        '</div>' +
-        '</div></div>';
-  } else {
-    infoWindowContent = '<div class="info_content">' +
-        '<div class="row">' +
-        '<div class="col-md-6">' +
-        '<p><b>Lat: </b>'+ data.location.lat +'</p>' +
-        '<p><b>Lng: </b>'+ data.location.lng +'</p>' +
-        '<p><b>Accuracy: </b>'+ data.accuracy || null +'</p>' +
-        '</div>' +
-        '</div></div>';
-  }
+  // Info Window Content
+  const infoWindowContent = '<div class="info_content">' +
+      '<div class="row">' +
+      '<div class="col-md-6">' +
+      '<p><b>MNC: </b>'+ cell.cellTowers[0].mobileNetworkCode +'</p>' +
+      '<p><b>MCC: </b>'+ cell.cellTowers[0].mobileCountryCode +'</p>' +
+      '<p><b>LAC: </b>'+ cell.cellTowers[0].locationAreaCode +'</p>' +
+      '<p><b>CELL ID: </b>'+ cell.cellTowers[0].cellId +'</p>' +
+      '</div>' +
+      '<div class="col-md-6">' +
+      '<p><b>Lat: </b>'+ data.location.lat +'</p>' +
+      '<p><b>Lng: </b>'+ data.location.lng +'</p>' +
+      '<p><b>Accuracy: </b>'+ data.accuracy || null +'</p>' +
+      '</div>' +
+      '</div></div>';
 
   // Display multiple markers on a map
   var infowindow = new google.maps.InfoWindow({
@@ -346,22 +263,21 @@ function placeMarker(data, cell, waps, color) {
     map: map,
     title: 'Cell Tower',
     icon: {
-      url: "http://maps.google.com/mapfiles/ms/icons/"+color+"-dot.png"
+      url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
     }
   });
 
-  // var circle = new google.maps.Circle({
-  //   map: map,
-  //   radius: 100,    // 10 miles in metres
-  //   fillColor: '#313131',
-  //   fillOpacity: .3,
-  //   strokeColor: '#fff',
-  //   strokeOpacity: .4,
-  //   strokeWeight: .8
-  // });
-  //
-  // circle.bindTo('center', marker, 'position');
-  // gmarkers.push(circle);
+  var circle = new google.maps.Circle({
+    map: map,
+    // radius: 100,    // 10 miles in metres
+    fillColor: '#313131',
+    fillOpacity: .3,
+    strokeColor: '#fff',
+    strokeOpacity: .4,
+    strokeWeight: .8
+  });
+
+  circle.bindTo('center', marker, 'position');
 
   // Allow each marker to have an info window
   marker.addListener('click', function() {
@@ -369,7 +285,7 @@ function placeMarker(data, cell, waps, color) {
   });
 
   gmarkers.push(marker);
-
+  gmarkers.push(circle);
 
   map.fitBounds(bounds);
 
@@ -379,63 +295,63 @@ function placeMarker(data, cell, waps, color) {
   });
 }
 
-// function placeTriangulatedMarker(data) {
-//
-//   const position = { lat: data.location.lat, lng: data.location.lng};
-//   let bounds = new google.maps.LatLngBounds();
-//
-//   bounds.extend(position);
-//   const center = new google.maps.LatLng(data.location.lat, data.location.lng);
-//
-//   const marker = new google.maps.Marker({
-//     position: position,
-//     map: map,
-//     icon: {
-//       url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-//     }
-//   });
-//
-//   gmarkers.push(marker);
-// }
+function placeTriangulatedMarker(data) {
 
-// function placeCoordinates(lat, long, radius) {
-//   const position = { lat: parseFloat(lat), lng: parseFloat(long)};
-//   let bounds = new google.maps.LatLngBounds();
-//
-//   bounds.extend(position);
-//   const center = new google.maps.LatLng(parseInt(lat), parseInt(long));
-//
-//   const marker = new google.maps.Marker({
-//     position: position,
-//     map: map,
-//     icon: {
-//       url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-//     },
-//     title: 'Placed marker'
-//   });
-//
-//   var circle = new google.maps.Circle({
-//     map: map,
-//     radius: parseInt(radius),
-//     fillColor: '#313131',
-//     fillOpacity: .3,
-//     strokeColor: '#fff',
-//     strokeOpacity: .5,
-//     strokeWeight: .9
-//   });
-//
-//   circle.bindTo('center', marker, 'position');
-//
-//   gmarkers.push(marker);
-//   gmarkers.push(circle);
-//
-//   map.fitBounds(bounds);
-//
-//   var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
-//     this.setZoom(14);
-//     google.maps.event.removeListener(boundsListener);
-//   });
-// }
+  const position = { lat: data.location.lat, lng: data.location.lng};
+  let bounds = new google.maps.LatLngBounds();
+
+  bounds.extend(position);
+  const center = new google.maps.LatLng(data.location.lat, data.location.lng);
+
+  const marker = new google.maps.Marker({
+    position: position,
+    map: map,
+    icon: {
+      url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+    }
+  });
+
+  gmarkers.push(marker);
+}
+
+function placeCoordinates(lat, long, radius) {
+  const position = { lat: parseFloat(lat), lng: parseFloat(long)};
+  let bounds = new google.maps.LatLngBounds();
+
+  bounds.extend(position);
+  const center = new google.maps.LatLng(parseInt(lat), parseInt(long));
+
+  const marker = new google.maps.Marker({
+    position: position,
+    map: map,
+    icon: {
+      url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+    },
+    title: 'Placed marker'
+  });
+
+  var circle = new google.maps.Circle({
+    map: map,
+    radius: parseInt(radius),
+    fillColor: '#313131',
+    fillOpacity: .3,
+    strokeColor: '#fff',
+    strokeOpacity: .5,
+    strokeWeight: .9
+  });
+
+  circle.bindTo('center', marker, 'position');
+
+  gmarkers.push(marker);
+  gmarkers.push(circle);
+
+  map.fitBounds(bounds);
+
+  var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+    this.setZoom(14);
+    google.maps.event.removeListener(boundsListener);
+  });
+}
 
 function removeMarkers() {
   for (i = 0; i < gmarkers.length; i++) {
@@ -473,7 +389,7 @@ function triangulate(towers) {
     location: { lat: clientLatitude, lng: clientLongitude },
   };
 
-  placeMarker(data, null, null, 'red');
+  placeTriangulatedMarker(data);
 }
 
 $(document).ready(function () {
