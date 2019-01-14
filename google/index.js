@@ -7,38 +7,10 @@ app.controller('MainCtrl', function($scope) {
   var defaultCell = [{
     "id": 1,
     "cellTowers": [{
-      "cellId": 549659,
-      "locationAreaCode": 302,
-      "mobileCountryCode": 621,
-      "mobileNetworkCode": 20,
-      "signalStrength": -60
-    }]
-  },
-  {
-    "id": 2,
-    "cellTowers": [{
-      "cellId": 769025,
-      "locationAreaCode": 44001,
-      "mobileCountryCode": 621,
-      "mobileNetworkCode": 60,
-      "signalStrength": -60
-    }]
-  },{
-    "id": 3,
-    "cellTowers": [{
-      "cellId": 529219,
-      "locationAreaCode": 302,
-      "mobileCountryCode": 621,
-      "mobileNetworkCode": 20,
-      "signalStrength": -60
-    }]
-  },{
-    "id": 4,
-    "cellTowers": [{
-      "cellId": 459439,
-      "locationAreaCode": 303,
-      "mobileCountryCode": 621,
-      "mobileNetworkCode": 20,
+      "cellId": '',
+      "locationAreaCode": '',
+      "mobileCountryCode": '',
+      "mobileNetworkCode": '',
       "signalStrength": -60
     }]
   }];
@@ -55,11 +27,6 @@ app.controller('MainCtrl', function($scope) {
       "signalStrength": -70
     }
   ]
-
-  $scope.coord = {
-    "details": '',
-    "radius": ''
-  };
 
   $scope.cells = defaultCell;
   $scope.index = $scope.cells.length;
@@ -107,6 +74,7 @@ app.controller('MainCtrl', function($scope) {
 
   // Search for Cell Towers
   $scope.cellTowerSearch = function() {
+    removeMarkers();
     geolocator('cells', $scope.cells, $scope.cells.length);
   }
 
@@ -152,7 +120,6 @@ app.controller('MainCtrl', function($scope) {
 
   // Search for WAP using MAC addresses
   $scope.wapSearch = function() {
-
     const wapDetails = {
       "considerIp": "false",
       "wifiAccessPoints": $scope.waps
@@ -163,19 +130,32 @@ app.controller('MainCtrl', function($scope) {
     // 00:08:9F:0E:0B:EF
   }
 
-  //
-  $scope.placeCoordinates = function() {
-    // var coords = $scope.coord.details.split(",");
-    //
-    // console.log($scope.coord.details);
-    //
-    // if ($scope.coord.details && $scope.coord.radius) {
-    //   console.log('here');
-    //   placeCoordinates(coords[0], coords[1], $scope.coord.radius);
-    // } else {
-    //   alert ('All fields are required');
-    // }
+  const defaultPoint = {
+    "details": '',
+    "radius": ''
   }
+  $scope.coord = defaultPoint;
+
+  $scope.placeCoordinates = function(coord) {
+    const coords = $scope.coord.details.split(",");
+
+    if ($scope.coord.details && $scope.coord.radius) {
+      const data = {
+        accuracy: null,
+        radius: $scope.coord.radius,
+        location: { lat: parseFloat(coords[0]), lng: parseFloat(coords[1]) }
+      }
+
+      placeMarker(data, null, null, 'blue');
+      $('#enterCoordinates').modal('hide');
+      $scope.coord = angular.copy(defaultPoint);
+
+    } else {
+      alert ('All fields are required');
+    }
+  }
+
+// 6.45423, 3.389154
 
 });
 
@@ -350,18 +330,20 @@ function placeMarker(data, cell, waps, color) {
     }
   });
 
-  // var circle = new google.maps.Circle({
-  //   map: map,
-  //   radius: 100,    // 10 miles in metres
-  //   fillColor: '#313131',
-  //   fillOpacity: .3,
-  //   strokeColor: '#fff',
-  //   strokeOpacity: .4,
-  //   strokeWeight: .8
-  // });
-  //
-  // circle.bindTo('center', marker, 'position');
-  // gmarkers.push(circle);
+  if(data.radius) {
+    const circle = new google.maps.Circle({
+      map: map,
+      radius: parseInt(data.radius),
+      fillColor: '#313131',
+      fillOpacity: .3,
+      strokeColor: '#fff',
+      strokeOpacity: .4,
+      strokeWeight: .8
+    });
+
+    circle.bindTo('center', marker, 'position');
+    gmarkers.push(circle);
+  }
 
   // Allow each marker to have an info window
   marker.addListener('click', function() {
@@ -369,8 +351,6 @@ function placeMarker(data, cell, waps, color) {
   });
 
   gmarkers.push(marker);
-
-
   map.fitBounds(bounds);
 
   var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
