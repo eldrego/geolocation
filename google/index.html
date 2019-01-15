@@ -56,10 +56,10 @@
                     <form>
                         <div class="form-row">
                           <div class="form-group col">
-                            <label for="inputPassword4">MNC</label>
+                            <label for="inputEmail4">MCC</label>
                           </div>
                           <div class="form-group col">
-                            <label for="inputEmail4">MCC</label>
+                            <label for="inputPassword4">MNC</label>
                           </div>
                           <div class="form-group col">
                             <label for="inputPassword4">LAC</label>
@@ -77,10 +77,10 @@
 
                         <div class="form-row" data-ng-repeat="cell in cells track by cell.id">
                           <div class="form-group col">
-                            <input type="text" class="form-control" ng-model="cell.cellTowers[0].mobileNetworkCode" id="mnc" placeholder="Mobile Network Code">
+                            <input type="text" class="form-control" ng-model="cell.cellTowers[0].mobileCountryCode" cellTowersid="mcc" placeholder="Mobile Country Code">
                           </div>
                           <div class="form-group col">
-                            <input type="text" class="form-control" ng-model="cell.cellTowers[0].mobileCountryCode" cellTowersid="mcc" placeholder="Mobile Country Code">
+                            <input type="text" class="form-control" ng-model="cell.cellTowers[0].mobileNetworkCode" id="mnc" placeholder="Mobile Network Code">
                           </div>
                           <div class="form-group col">
                             <input type="text" class="form-control" ng-model="cell.cellTowers[0].locationAreaCode" name=""id="lac" placeholder="Location Area Code">
