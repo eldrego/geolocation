@@ -28,6 +28,19 @@ app.controller('MainCtrl', function($scope) {
     }
   ]
 
+  const macDefaults = [
+    {
+      "id": 1,
+      "address": '00:0C:42:0C:4B:40',
+      "signalStrength": -70
+    },
+    {
+      "id": 2,
+      "address": '00:0E:2E:B0:07:43',
+      "signalStrength": -70
+    }
+  ]
+
   $scope.cells = defaultCell;
   $scope.index = $scope.cells.length;
 
@@ -49,7 +62,6 @@ app.controller('MainCtrl', function($scope) {
       }]
     });
   };
-
   $scope.removeCell = function(id) {
     if($scope.cells.length<=1){
       alert("Cell towers cannot be less than 1");
@@ -76,7 +88,6 @@ app.controller('MainCtrl', function($scope) {
   $scope.cellTowerSearch = function() {
     removeMarkers();
     geolocator('cells', $scope.cells, $scope.cells.length);
-
   }
 
 
@@ -126,9 +137,50 @@ app.controller('MainCtrl', function($scope) {
       "wifiAccessPoints": $scope.waps
     }
     geolocator('waps', null, null, wapDetails);
+  }
 
-    // 00:0E:2E:D2:BB:05
-    // 00:08:9F:0E:0B:EF
+  $scope.macs = macDefaults;
+  $scope.macsIndex = $scope.macs.length;
+
+  $scope.addNewMac = function() {
+    if($scope.macs.length>=5){
+      alert("MAC address cannot be more than 5");
+      return;
+    }
+
+    var newItemNo = ++$scope.macsIndex;
+    $scope.macs.push({
+      "id": newItemNo,
+      "address": '',
+      "signalStrength": -70
+    });
+  };
+
+  $scope.removeMac = function(id) {
+    if($scope.macs.length<=1){
+      alert("MAC address cannot be less than 1");
+      return;
+    }
+
+    var index = -1;
+    var comArr = eval( $scope.macs );
+    for( var i = 0; i < comArr.length; i++ ) {
+      if( comArr[i].id === id) {
+        index = i;
+        break;
+      }
+    }
+
+    if( index === -1 ) {
+      alert( "Something gone wrong" );
+    }
+
+    $scope.macs.splice( index, 1 );
+  };
+
+  // Search for WAP using MAC addresses
+  $scope.macSearch = function() {
+    bssidSearch($scope.macs, $scope.macsIndex);
   }
 
   const defaultPoint = {
@@ -155,9 +207,6 @@ app.controller('MainCtrl', function($scope) {
       alert ('All fields are required');
     }
   }
-
-// 49.448319899999994, 33.0389154
-
 });
 
 function initMap() {
@@ -244,7 +293,6 @@ function geolocator(searchType, cells, cellsLength, waps) {
       xhr.send(searchParams);
     });
   } else if (waps) {
-    console.log(waps)
     const searchParams = JSON.stringify(waps);
     const xhr = new XMLHttpRequest();
 
@@ -253,7 +301,6 @@ function geolocator(searchType, cells, cellsLength, waps) {
         const data = JSON.parse(xhr.responseText);
         if (data.hasOwnProperty('error')) {
           // Parse errors and display in a better format
-          console.log(data)
           alert(data.error.message);
           // $('#cellSearch').modal('hide');
         }
@@ -271,6 +318,28 @@ function geolocator(searchType, cells, cellsLength, waps) {
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(searchParams);
   }
+}
+
+function bssidSearch(macs) {
+  let searchUrl = 'https://api.mylnikov.org/geolocation/wifi?v=1.1&data=open&'
+
+  if(macs.length > 1) {
+    const searchParam = window.btoa(parseString(macs));
+    searchUrl=searchUrl+'search='+searchParam;
+  } else {
+    const bssid = parseString(macs).split(",")[0]
+    searchUrl=searchUrl+'bssid='+bssid;
+  }
+
+  $.get(searchUrl, function(response, status){
+    if(status === 'success') {
+      const data = {
+        accuracy: response.data.range,
+        location: { lat: response.data.lat, lng: response.data.lon },
+      }
+      placeMarker(data, null, null, 'yellow');
+    }
+  });
 }
 
 function placeMarker(data, cell, waps, color) {
@@ -325,7 +394,6 @@ function placeMarker(data, cell, waps, color) {
   const marker = new google.maps.Marker({
     position: position,
     map: map,
-    title: 'Cell Tower',
     icon: {
       url: "http://maps.google.com/mapfiles/ms/icons/"+color+"-dot.png"
     }
@@ -360,76 +428,9 @@ function placeMarker(data, cell, waps, color) {
   });
 }
 
-// function placeTriangulatedMarker(data) {
-//
-//   const position = { lat: data.location.lat, lng: data.location.lng};
-//   let bounds = new google.maps.LatLngBounds();
-//
-//   bounds.extend(position);
-//   const center = new google.maps.LatLng(data.location.lat, data.location.lng);
-//
-//   const marker = new google.maps.Marker({
-//     position: position,
-//     map: map,
-//     icon: {
-//       url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-//     }
-//   });
-//
-//   gmarkers.push(marker);
-// }
-
-// function placeCoordinates(lat, long, radius) {
-//   const position = { lat: parseFloat(lat), lng: parseFloat(long)};
-//   let bounds = new google.maps.LatLngBounds();
-//
-//   bounds.extend(position);
-//   const center = new google.maps.LatLng(parseInt(lat), parseInt(long));
-//
-//   const marker = new google.maps.Marker({
-//     position: position,
-//     map: map,
-//     icon: {
-//       url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-//     },
-//     title: 'Placed marker'
-//   });
-//
-//   var circle = new google.maps.Circle({
-//     map: map,
-//     radius: parseInt(radius),
-//     fillColor: '#313131',
-//     fillOpacity: .3,
-//     strokeColor: '#fff',
-//     strokeOpacity: .5,
-//     strokeWeight: .9
-//   });
-//
-//   circle.bindTo('center', marker, 'position');
-//
-//   gmarkers.push(marker);
-//   gmarkers.push(circle);
-//
-//   map.fitBounds(bounds);
-//
-//   var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
-//     this.setZoom(14);
-//     google.maps.event.removeListener(boundsListener);
-//   });
-// }
-
 function removeMarkers() {
   for (i = 0; i < gmarkers.length; i++) {
     gmarkers[i].setMap(null);
-  }
-}
-
-function numberParser(number) {
-  const parsedNumber = parseInt(number)
-  if (isNaN(parsedNumber)) {
-    return false;
-  } else {
-    return parsedNumber
   }
 }
 
@@ -457,12 +458,24 @@ function triangulate(towers) {
   placeMarker(data, null, null, 'red');
 }
 
-$(document).ready(function () {
-  $(document).on('click', '#placeit', function(event) {
-    const data = {
-      accuracy: 1663,
-      location: { lat: 6.4557421, lng: 3.3976888 },
-    }
-    placeMarker(data);
+function numberParser(number) {
+  const parsedNumber = parseInt(number)
+  if (isNaN(parsedNumber)) {
+    return false;
+  } else {
+    return parsedNumber
+  }
+}
+
+function parseString(macs){
+  let parsedMacs = '';
+  let searchString = '';
+
+  parsedMacs = macs.map(function(mac) {
+    let string= mac.address+","+mac.signalStrength
+    return string;
   })
-});
+
+  searchString = parsedMacs.join(",");
+  return searchString
+}
