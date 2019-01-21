@@ -5,42 +5,17 @@ var gmarkers = [];
 
 app.controller('MainCtrl', function($scope) {
   var defaultCell = [{
-    "id": 2,
+    "id": 1,
     "cellTowers": [{
-      "cellId": 9341,
-      "locationAreaCode": 12710,
-      "mobileCountryCode": 255,
-      "mobileNetworkCode": 6,
-      "signalStrength": 28
+      "cellId": '',
+      "locationAreaCode": '',
+      "mobileCountryCode": '',
+      "mobileNetworkCode": '',
+      "signalStrength": ''
     }]
   }];
 
-  const wapDefaults = [
-    {
-      "id": 1,
-      "macAddress": '',
-      "signalStrength": -70
-    },
-    {
-      "id": 2,
-      "macAddress": '',
-      "signalStrength": -70
-    }
-  ]
-
-  const macDefaults = [
-    {
-      "id": 1,
-      "address": '00:0C:42:0C:4B:40',
-      "signalStrength": -70
-    },
-    {
-      "id": 2,
-      "address": '00:0E:2E:B0:07:43',
-      "signalStrength": -70
-    }
-  ]
-
+  $scope.waps = [{ "id": 1, "address": '', "signalStrength": -70}]
   $scope.cells = defaultCell;
   $scope.index = $scope.cells.length;
 
@@ -90,10 +65,7 @@ app.controller('MainCtrl', function($scope) {
     geolocator('cells', $scope.cells, $scope.cells.length);
   }
 
-
-  $scope.waps = wapDefaults;
   $scope.wapIndex = $scope.waps.length;
-
   $scope.addNewWap = function() {
     if($scope.waps.length>=5){
       alert("MAC address cannot be more than 5");
@@ -107,7 +79,6 @@ app.controller('MainCtrl', function($scope) {
       "signalStrength": -70
     });
   };
-
   $scope.removeWap = function(id) {
     if($scope.waps.length<=2){
       alert("MAC address cannot be less than 2");
@@ -129,8 +100,6 @@ app.controller('MainCtrl', function($scope) {
 
     $scope.waps.splice( index, 1 );
   };
-
-  // Search for WAP using MAC addresses
   $scope.wapSearch = function() {
     const wapDetails = {
       "considerIp": "false",
@@ -139,9 +108,8 @@ app.controller('MainCtrl', function($scope) {
     geolocator('waps', null, null, wapDetails);
   }
 
-  $scope.macs = macDefaults;
+  $scope.macs = [{ "id": 1, "address": '', "signalStrength": -70}]
   $scope.macsIndex = $scope.macs.length;
-
   $scope.addNewMac = function() {
     if($scope.macs.length>=5){
       alert("MAC address cannot be more than 5");
@@ -155,7 +123,6 @@ app.controller('MainCtrl', function($scope) {
       "signalStrength": -70
     });
   };
-
   $scope.removeMac = function(id) {
     if($scope.macs.length<=1){
       alert("MAC address cannot be less than 1");
@@ -177,8 +144,6 @@ app.controller('MainCtrl', function($scope) {
 
     $scope.macs.splice( index, 1 );
   };
-
-  // Search for WAP using MAC addresses
   $scope.macSearch = function() {
     bssidSearch($scope.macs, $scope.macsIndex);
   }
@@ -353,6 +318,8 @@ function findWifi(wifiBssid) {
               alert(wifiBssid +" "+response.desc);
             }
         });
+      } else {
+        alert('Please MAC Address format');
       }
   });
   return false;
