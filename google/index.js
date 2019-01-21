@@ -5,13 +5,13 @@ var gmarkers = [];
 
 app.controller('MainCtrl', function($scope) {
   var defaultCell = [{
-    "id": 1,
+    "id": 2,
     "cellTowers": [{
-      "cellId": '',
-      "locationAreaCode": '',
-      "mobileCountryCode": '',
-      "mobileNetworkCode": '',
-      "signalStrength": ''
+      "cellId": 9341,
+      "locationAreaCode": 12710,
+      "mobileCountryCode": 255,
+      "mobileNetworkCode": 6,
+      "signalStrength": 28
     }]
   }];
 
@@ -201,7 +201,6 @@ app.controller('MainCtrl', function($scope) {
 
       placeMarker(data, null, null, 'blue');
       $('#enterCoordinates').modal('hide');
-      $scope.coord = angular.copy(defaultPoint);
 
     } else {
       alert ('All fields are required');
@@ -256,7 +255,7 @@ function geolocator(searchType, cells, cellsLength, waps) {
           if (data.hasOwnProperty('error')) {
             // Parse errors and display in a better format
             alert(data.error.message);
-            // $('#cellSearch').modal('hide');
+            $('#cellSearch').modal('hide');
           }
         }
 
@@ -293,6 +292,7 @@ function geolocator(searchType, cells, cellsLength, waps) {
       xhr.send(searchParams);
     });
   } else if (waps) {
+
     const searchParams = JSON.stringify(waps);
     const xhr = new XMLHttpRequest();
 
@@ -302,7 +302,7 @@ function geolocator(searchType, cells, cellsLength, waps) {
         if (data.hasOwnProperty('error')) {
           // Parse errors and display in a better format
           alert(data.error.message);
-          // $('#cellSearch').modal('hide');
+          $('#macSearch').modal('hide');
         }
       }
 
@@ -310,7 +310,8 @@ function geolocator(searchType, cells, cellsLength, waps) {
       if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
         const data = JSON.parse(xhr.responseText);
         if (data.hasOwnProperty('location')) {
-
+          placeMarker(data, null, null, 'blue');
+          $('#macSearch').modal('hide');
         }
       }
     }
@@ -321,25 +322,40 @@ function geolocator(searchType, cells, cellsLength, waps) {
 }
 
 function bssidSearch(macs) {
-  let searchUrl = 'https://api.mylnikov.org/geolocation/wifi?v=1.1&data=open&'
+  removeMarkers();
 
-  if(macs.length > 1) {
-    const searchParam = window.btoa(parseString(macs));
-    searchUrl=searchUrl+'search='+searchParam;
-  } else {
-    const bssid = parseString(macs).split(",")[0]
-    searchUrl=searchUrl+'bssid='+bssid;
-  }
-
-  $.get(searchUrl, function(response, status){
-    if(status === 'success') {
-      const data = {
-        accuracy: response.data.range,
-        location: { lat: response.data.lat, lng: response.data.lon },
-      }
-      placeMarker(data, null, null, 'yellow');
-    }
+  const bssid = parseString(macs).split(",")
+  bssid.forEach(function(mac) {
+    findWifi(mac)
   });
+
+
+}
+
+function findWifi(wifiBssid) {
+  wifiBssid.split(";").slice(0, 20).forEach(function (name) {
+    bssidOne = name.trim().split(",")[0];
+      if (bssidOne.length >= 12) {
+        $.getJSON("https://api.mylnikov.org/wifi?v=1.1&bssid=" + bssidOne + "&jsoncallback=?",
+          { tags: "jquery", tagmode: "any", format: "json" },
+          function (response) {
+            if (response.result == 200) {
+              const data = {
+                accuracy: response.data.range,
+                location: { lat: response.data.lat, lng: response.data.lon },
+              }
+              placeMarker(data, null, null, 'yellow');
+
+              $('#wifiSearch').modal('hide');
+            }
+
+            if (response.result != 200) {
+              alert(wifiBssid +" "+response.desc);
+            }
+        });
+      }
+  });
+  return false;
 }
 
 function placeMarker(data, cell, waps, color) {
@@ -423,7 +439,7 @@ function placeMarker(data, cell, waps, color) {
   map.fitBounds(bounds);
 
   var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
-    this.setZoom(14);
+    this.setZoom(5);
     google.maps.event.removeListener(boundsListener);
   });
 }
@@ -472,7 +488,7 @@ function parseString(macs){
   let searchString = '';
 
   parsedMacs = macs.map(function(mac) {
-    let string= mac.address+","+mac.signalStrength
+    let string= mac.address
     return string;
   })
 
