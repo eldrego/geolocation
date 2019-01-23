@@ -4,19 +4,35 @@ var status = false;
 var gmarkers = [];
 
 app.controller('MainCtrl', function($scope) {
-  var defaultCell = [{
-    "id": 1,
+  $scope.cells = [{
+    "id": 2,
     "cellTowers": [{
-      "cellId": '',
-      "locationAreaCode": '',
-      "mobileCountryCode": '',
-      "mobileNetworkCode": '',
-      "signalStrength": ''
+      "cellId": 9341,
+      "locationAreaCode": 12710,
+      "mobileCountryCode": 255,
+      "mobileNetworkCode": 6,
+      "signalStrength": 28
+    }]
+  },{
+    "id": 3,
+    "cellTowers": [{
+      "cellId": 9243,
+      "locationAreaCode": 12710,
+      "mobileCountryCode": 255,
+      "mobileNetworkCode": 6,
+      "signalStrength": 26
+    }]
+  },{
+    "id": 4,
+    "cellTowers": [{
+      "cellId": 9401,
+      "locationAreaCode": 12710,
+      "mobileCountryCode": 255,
+      "mobileNetworkCode": 6,
+      "signalStrength": 17
     }]
   }];
 
-  $scope.waps = [{ "id": 1, "address": '', "signalStrength": -70}]
-  $scope.cells = defaultCell;
   $scope.index = $scope.cells.length;
 
   $scope.addNewCell = function() {
@@ -58,13 +74,16 @@ app.controller('MainCtrl', function($scope) {
 
     $scope.cells.splice( index, 1 );
   };
-
-  // Search for Cell Towers
   $scope.cellTowerSearch = function() {
     removeMarkers();
     geolocator('cells', $scope.cells, $scope.cells.length);
   }
 
+  // Build WAP JSON for Google Search
+  $scope.waps = [
+    { "id": 1, "address": '', "signalStrength": -70},
+    { "id": 2, "address": '', "signalStrength": -70}
+  ];
   $scope.wapIndex = $scope.waps.length;
   $scope.addNewWap = function() {
     if($scope.waps.length>=5){
@@ -108,6 +127,7 @@ app.controller('MainCtrl', function($scope) {
     geolocator('waps', null, null, wapDetails);
   }
 
+  // Build WAP JSON for Mylnikov Search
   $scope.macs = [{ "id": 1, "address": '', "signalStrength": -70}]
   $scope.macsIndex = $scope.macs.length;
   $scope.addNewMac = function() {
@@ -123,6 +143,7 @@ app.controller('MainCtrl', function($scope) {
       "signalStrength": -70
     });
   };
+
   $scope.removeMac = function(id) {
     if($scope.macs.length<=1){
       alert("MAC address cannot be less than 1");
@@ -291,13 +312,13 @@ function bssidSearch(macs) {
 
   const bssid = parseString(macs).split(",")
   bssid.forEach(function(mac) {
-    findWifi(mac)
+    findWifi(mac, bssid)
   });
 
 
 }
 
-function findWifi(wifiBssid) {
+function findWifi(wifiBssid, bssid) {
   wifiBssid.split(";").slice(0, 20).forEach(function (name) {
     bssidOne = name.trim().split(",")[0];
       if (bssidOne.length >= 12) {
@@ -309,7 +330,7 @@ function findWifi(wifiBssid) {
                 accuracy: response.data.range,
                 location: { lat: response.data.lat, lng: response.data.lon },
               }
-              placeMarker(data, null, null, 'yellow');
+              placeMarker(data, null, bssid, 'yellow');
 
               $('#wifiSearch').modal('hide');
             }
@@ -327,47 +348,35 @@ function findWifi(wifiBssid) {
 
 function placeMarker(data, cell, waps, color) {
 
+
   const position = { lat: data.location.lat, lng: data.location.lng};
   let bounds = new google.maps.LatLngBounds();
-
   bounds.extend(position);
   const center = new google.maps.LatLng(data.location.lat, data.location.lng);
 
-  let infoWindowContent = '';
+  console.log(bounds);
+
+  let infoWindowContent = '<div class="info_content"><div class="row">';
 
   if (cell) {
-    // Info Window Content
-    infoWindowContent = '<div class="info_content">' +
-        '<div class="row">' +
-        '<div class="col-md-6">' +
+    infoWindowContent += '<div class="col-md-6">' +
         '<p><b>MNC: </b>'+ cell.cellTowers[0].mobileNetworkCode +'</p>' +
         '<p><b>MCC: </b>'+ cell.cellTowers[0].mobileCountryCode +'</p>' +
         '<p><b>LAC: </b>'+ cell.cellTowers[0].locationAreaCode +'</p>' +
         '<p><b>CELL ID: </b>'+ cell.cellTowers[0].cellId +'</p>' +
-        '</div>' +
-        '<div class="col-md-6">' +
-        '<p><b>Lat: </b>'+ data.location.lat +'</p>' +
-        '<p><b>Lng: </b>'+ data.location.lng +'</p>' +
-        '<p><b>Accuracy: </b>'+ data.accuracy || null +'</p>' +
-        '</div>' +
-        '</div></div>';
+        '</div>';
   } else if (waps){
-    infoWindowContent = '<div class="info_content">' +
-        '<div class="row">' +
-        '<div class="col-md-6">' +
-        '<p><b>MNC: </b> Content for the Gods </p>' +
-        '</div>' +
-        '</div></div>';
-  } else {
-    infoWindowContent = '<div class="info_content">' +
-        '<div class="row">' +
-        '<div class="col-md-6">' +
-        '<p><b>Lat: </b>'+ data.location.lat +'</p>' +
-        '<p><b>Lng: </b>'+ data.location.lng +'</p>' +
-        '<p><b>Accuracy: </b>'+ data.accuracy || null +'</p>' +
-        '</div>' +
-        '</div></div>';
+    infoWindowContent += '<div class="col-md-6">' +
+        '<p><b>MAC Address: </b>'+ waps[0] +'</p>' +
+        '</div>';
   }
+
+  infoWindowContent +='<div class="col-md-6">' +
+      '<p><b>Lat: </b>'+ data.location.lat +'</p>' +
+      '<p><b>Lng: </b>'+ data.location.lng +'</p>' +
+      '<p><b>Accuracy: </b>'+ data.accuracy || null +'</p>' +
+      '</div>' +
+      '</div></div>';
 
   // Display multiple markers on a map
   var infowindow = new google.maps.InfoWindow({
@@ -382,10 +391,11 @@ function placeMarker(data, cell, waps, color) {
     }
   });
 
-  if(data.radius) {
+  if(data.radius || data.accuracy) {
+    let radius = parseInt(data.radius) || parseInt(data.accuracy)
     const circle = new google.maps.Circle({
       map: map,
-      radius: parseInt(data.radius),
+      radius: radius,
       fillColor: '#313131',
       fillOpacity: .3,
       strokeColor: '#fff',
