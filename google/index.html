@@ -18,29 +18,27 @@
     <div class="container-fluid">
       <div class="row">
         <main role="main" class="col-md-12 ml-sm-auto col-lg-12 pt-3 px-4">
-          <div class="row pb-2 mb-3 border-bottom">
-            <div class="col-md-4 col-lg-4">
-              <h5 class="h5">Search Display</h5>
+          <div class="row pb-2 mb-3">
+            <div class="col-md-3 col-lg-3">
+              <h6 class="h6">Search Display</h6>
             </div>
-
-            <div class="col-md-8 col-lg-8">
-              <a class="btn btn-success btn-sm modal-button text-right" data-toggle="modal" data-target="#cellSearch" href="#cellSearch" role="button" aria-expanded="false" aria-controls="cellSearch">
-                Cell Tower Search
-              </a>
-
-              <a class="btn btn-success btn-sm modal-button text-right" data-toggle="modal" data-target="#enterCoordinates" href="#enterCoordinates" role="button" aria-expanded="false" aria-controls="enterCoordinates">
-                Enter Coordinates
-              </a>
-
-              <a class="btn btn-success btn-sm modal-button text-right" data-toggle="modal" data-target="#macSearch" href="#macSearch" role="button" aria-expanded="false" aria-controls="macSearch">
-                WAP Search
-              </a>
-
-              <a class="btn btn-success btn-sm modal-button text-right" title="WIFI mac adress using API from mylnikov" data-toggle="modal" data-target="#wifiSearch" href="#wifiSearch" role="button" aria-expanded="false" aria-controls="wifiSearch">
+            <div class="col-md-9 col-lg-9 button-box">
+              <button class="btn btn-warning btn-sm modal-button float-right" title="WIFI mac adress using API from mylnikov" data-toggle="modal" data-target="#wifiSearch" href="#wifiSearch" role="button" aria-expanded="false" aria-controls="wifiSearch">
                 MAC Address Search
-              </a>
-            </div>
+              </button>
 
+              <button class="btn btn-success btn-sm modal-button float-right" data-toggle="modal" data-target="#macSearch" href="#macSearch" role="button" aria-expanded="false" aria-controls="macSearch">
+                WAP Search
+              </button>
+
+              <button class="btn btn-success btn-sm modal-button float-right" data-toggle="modal" data-target="#enterCoordinates" href="#enterCoordinates" role="button" aria-expanded="false" aria-controls="enterCoordinates">
+                Enter Coordinates
+              </button>
+
+              <button class="btn btn-success btn-sm modal-button float-right" data-toggle="modal" data-target="#cellSearch" href="#cellSearch" role="button" aria-expanded="false" aria-controls="cellSearch">
+                Cell Tower Search
+              </button>
+            </div>
           </div>
           <div id="map"></div>
 
@@ -249,8 +247,6 @@
               </div>
             </div>
           </div>
-
-
         </main>
       </div>
     </div>
